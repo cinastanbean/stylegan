@@ -12,7 +12,7 @@ import json
 import os
 import pprint
 import time
-import types
+import typestrain
 
 from typing import Any
 

@@ -213,6 +213,7 @@ def _populate_run_dir(run_dir: str, submit_config: SubmitConfig) -> None:
     files = [(f[0], os.path.join(run_dir, "src", f[1])) for f in files]
     files += [(os.path.join(dnnlib_module_dir_path, "submission", "_internal", "run.py"), os.path.join(run_dir, "run.py"))]
 
+    #$$ copy_files_and_create_dirs
     util.copy_files_and_create_dirs(files)
 
     pickle.dump(submit_config, open(os.path.join(run_dir, "submit_config.pkl"), "wb"))
@@ -276,7 +277,7 @@ def submit_run(submit_config: SubmitConfig, run_func_name: str, **run_func_kwarg
 
         submit_config.task_name = "{0}-{1:05d}-{2}".format(submit_config.user_name, submit_config.run_id, submit_config.run_desc)
         submit_config.run_dir = run_dir
-        _populate_run_dir(run_dir, submit_config)
+        _populate_run_dir(run_dir, submit_config) #$$
 
     if submit_config.print_info:
         print("\nSubmit config:\n")

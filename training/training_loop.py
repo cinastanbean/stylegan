@@ -15,7 +15,7 @@ import dnnlib.tflib as tflib
 from dnnlib.tflib.autosummary import autosummary
 
 import config
-import train
+import train #$$ useless?
 from training import dataset
 from training import misc
 from metrics import metric_base
@@ -139,7 +139,7 @@ def training_loop(
     resume_time             = 0.0):     # Assumed wallclock time at the beginning. Affects reporting.
 
     # Initialize dnnlib and TensorFlow.
-    ctx = dnnlib.RunContext(submit_config, train)
+    ctx = dnnlib.RunContext(submit_config, train) #$$ train - useless?
     tflib.init_tf(tf_config)
 
     # Load training set.
@@ -213,6 +213,7 @@ def training_loop(
     cur_tick = 0
     tick_start_nimg = cur_nimg
     prev_lod = -1.0
+    # total_kimg = 15000
     while cur_nimg < total_kimg * 1000:
         if ctx.should_stop(): break
 
@@ -233,6 +234,7 @@ def training_loop(
 
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * 1000)
+        # sched.tick_kimg = s.tick_kimg = tick_kimg_dict.get(s.resolution, tick_kimg_base) #$$
         if cur_nimg >= tick_start_nimg + sched.tick_kimg * 1000 or done:
             cur_tick += 1
             tick_kimg = (cur_nimg - tick_start_nimg) / 1000.0
@@ -244,7 +246,10 @@ def training_loop(
             print('tick %-5d kimg %-8.1f lod %-5.2f minibatch %-4d time %-12s sec/tick %-7.1f sec/kimg %-7.2f maintenance %-6.1f gpumem %-4.1f' % (
                 autosummary('Progress/tick', cur_tick),
                 autosummary('Progress/kimg', cur_nimg / 1000.0),
-                autosummary('Progress/lod', sched.lod),
+                autosummary('Progress/lod', sched.lod), #$$ # Level-of-detail and resolution.
+                                                        #s.lod = training_set.resolution_log2
+                                                        #s.lod -= np.floor(np.log2(lod_initial_resolution))
+                                                        #s.lod -= phase_idx
                 autosummary('Progress/minibatch', sched.minibatch),
                 dnnlib.util.format_time(autosummary('Timing/total_sec', total_time)),
                 autosummary('Timing/sec_per_tick', tick_time),
@@ -261,8 +266,7 @@ def training_loop(
             if cur_tick % network_snapshot_ticks == 0 or done or cur_tick == 1:
                 pkl = os.path.join(submit_config.run_dir, 'network-snapshot-%06d.pkl' % (cur_nimg // 1000))
                 misc.save_pkl((G, D, Gs), pkl)
-                #metrics.run(pkl, run_dir=submit_config.run_dir, num_gpus=submit_config.num_gpus, tf_config=tf_config)
-                #$$
+                #metrics.run(pkl, run_dir=submit_config.run_dir, num_gpus=submit_config.num_gpus, tf_config=tf_config) #$$
             # Update summaries and RunContext.
             #metrics.update_autosummaries()#$$
             tflib.autosummary.save_summaries(summary_log, cur_nimg)

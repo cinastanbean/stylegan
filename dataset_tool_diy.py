@@ -504,6 +504,7 @@ def create_celeba(tfrecord_dir, celeba_dir, cx=89, cy=121):
             tfr.add_image(img)
 
 #----------------------------------------------------------------------------
+# raw
 '''
 def create_from_images(tfrecord_dir, image_dir, shuffle):
     print('Loading images from "%s"' % image_dir)
