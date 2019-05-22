@@ -331,7 +331,7 @@ def G_style(
 
     # Setup components.
     if 'synthesis' not in components:
-        components.synthesis = tflib.Network('G_synthesis', func_name=G_synthesis, **kwargs)
+        components.synthesis = tflib.Network('G_synthesis', func_name=G_synthesis, **kwargs) #$$
     num_layers = components.synthesis.input_shape[1]
     dlatent_size = components.synthesis.input_shape[2]
     if 'mapping' not in components:
@@ -476,7 +476,7 @@ def G_synthesis(
     # Primary inputs.
     dlatents_in.set_shape([None, num_styles, dlatent_size])
     dlatents_in = tf.cast(dlatents_in, dtype)
-    lod_in = tf.cast(tf.get_variable('lod', initializer=np.float32(0), trainable=False), dtype)
+    lod_in = tf.cast(tf.get_variable('lod', initializer=np.float32(0), trainable=False), dtype) #$$
 
     # Noise inputs.
     noise_inputs = []
@@ -550,6 +550,7 @@ def G_synthesis(
         def grow(x, res, lod):
             y = block(res, x)
             img = lambda: upscale2d(torgb(res, y), 2**lod)
+            #$$ tflib.lerp = a + (b - a) * t
             img = cset(img, (lod_in > lod), lambda: upscale2d(tflib.lerp(torgb(res, y), upscale2d(torgb(res - 1, x)), lod_in - lod), 2**lod))
             if lod > 0: img = cset(img, (lod_in < lod), lambda: grow(y, res + 1, lod - 1))
             return img()
@@ -592,7 +593,7 @@ def D_basic(
     labels_in.set_shape([None, label_size])
     images_in = tf.cast(images_in, dtype)
     labels_in = tf.cast(labels_in, dtype)
-    lod_in = tf.cast(tf.get_variable('lod', initializer=np.float32(0.0), trainable=False), dtype)
+    lod_in = tf.cast(tf.get_variable('lod', initializer=np.float32(0.0), trainable=False), dtype) #$$ lod_in <- lod
     scores_out = None
 
     # Building blocks.
@@ -639,11 +640,11 @@ def D_basic(
 
     # Recursive structure: complex but efficient.
     if structure == 'recursive':
-        def cset(cur_lambda, new_cond, new_lambda):
-            return lambda: tf.cond(new_cond, new_lambda, cur_lambda)
+        def cset(cur_lambda, new_cond, new_lambda): #$$ cset(false_fn, cond, true_fn)
+            return lambda: tf.cond(new_cond, new_lambda, cur_lambda) #$$ tf.cond(pred, true_fn=None, false_fn=None,
         def grow(res, lod):
             x = lambda: fromrgb(downscale2d(images_in, 2**lod), res)
-            if lod > 0: x = cset(x, (lod_in < lod), lambda: grow(res + 1, lod - 1))
+            if lod > 0: x = cset(x, (lod_in < lod), lambda: grow(res + 1, lod - 1)) #$$ lod is target, lod_in is current
             x = block(x(), res); y = lambda: x
             if res > 2: y = cset(y, (lod_in > lod), lambda: tflib.lerp(x, fromrgb(downscale2d(images_in, 2**(lod+1)), res - 1), lod_in - lod))
             return y()

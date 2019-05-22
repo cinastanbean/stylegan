@@ -75,14 +75,15 @@ def training_schedule(
     s.kimg = cur_nimg / 1000.0
 
     # Training phase.
-    phase_dur = lod_training_kimg + lod_transition_kimg
+    phase_dur = lod_training_kimg + lod_transition_kimg #$$ 1200 kimg
     phase_idx = int(np.floor(s.kimg / phase_dur)) if phase_dur > 0 else 0
     phase_kimg = s.kimg - phase_idx * phase_dur
 
     # Level-of-detail and resolution.
     s.lod = training_set.resolution_log2
     s.lod -= np.floor(np.log2(lod_initial_resolution))
-    s.lod -= phase_idx
+    s.lod -= phase_idx  #$$
+
     if lod_transition_kimg > 0:
         s.lod -= max(phase_kimg - lod_training_kimg, 0.0) / lod_transition_kimg
     s.lod = max(s.lod, 0.0)
@@ -160,7 +161,7 @@ def training_loop(
 
     print('Building TensorFlow graph...')
     with tf.name_scope('Inputs'), tf.device('/cpu:0'):
-        lod_in          = tf.placeholder(tf.float32, name='lod_in', shape=[])
+        lod_in          = tf.placeholder(tf.float32, name='lod_in', shape=[]) #$$ lod_in: sched.lod
         lrate_in        = tf.placeholder(tf.float32, name='lrate_in', shape=[])
         minibatch_in    = tf.placeholder(tf.int32, name='minibatch_in', shape=[])
         minibatch_split = minibatch_in // submit_config.num_gpus
@@ -194,6 +195,7 @@ def training_loop(
     print('Setting up snapshot image grid...')
     grid_size, grid_reals, grid_labels, grid_latents = misc.setup_snapshot_image_grid(G, training_set, **grid_args)
     sched = training_schedule(cur_nimg=total_kimg*1000, training_set=training_set, num_gpus=submit_config.num_gpus, **sched_args)
+    print("sched = {}".format(sched))
     grid_fakes = Gs.run(grid_latents, grid_labels, is_validation=True, minibatch_size=sched.minibatch//submit_config.num_gpus)
 
     print('Setting up run dir...')
@@ -214,11 +216,14 @@ def training_loop(
     tick_start_nimg = cur_nimg
     prev_lod = -1.0
     # total_kimg = 15000
+
+    #$$ control sched.lod --> lod_in -->
     while cur_nimg < total_kimg * 1000:
         if ctx.should_stop(): break
 
         # Choose training parameters and configure training ops.
         sched = training_schedule(cur_nimg=cur_nimg, training_set=training_set, num_gpus=submit_config.num_gpus, **sched_args)
+        print("cur_nimg / sched = {} / {}".format(cur_nimg, sched))
         training_set.configure(sched.minibatch // submit_config.num_gpus, sched.lod)
         if reset_opt_for_new_lod:
             if np.floor(sched.lod) != np.floor(prev_lod) or np.ceil(sched.lod) != np.ceil(prev_lod):
