@@ -79,23 +79,27 @@ def training_schedule(
     phase_idx = int(np.floor(s.kimg / phase_dur)) if phase_dur > 0 else 0
     phase_kimg = s.kimg - phase_idx * phase_dur
 
-    # Level-of-detail and resolution.
-    s.lod = training_set.resolution_log2
-    s.lod -= np.floor(np.log2(lod_initial_resolution))
-    s.lod -= phase_idx  #$$
+    # Level-of-detail and resolution. #$$ descend lod 倒序计算
+    s.lod = training_set.resolution_log2 #$$ 2**9 = 512
+    s.lod -= np.floor(np.log2(lod_initial_resolution)) #$$ 9-log(4)=6
+    s.lod -= phase_idx  #$$ 6-0
 
     if lod_transition_kimg > 0:
-        s.lod -= max(phase_kimg - lod_training_kimg, 0.0) / lod_transition_kimg
+        s.lod -= max(phase_kimg - lod_training_kimg, 0.0) / lod_transition_kimg #$$ shit float
     s.lod = max(s.lod, 0.0)
-    s.resolution = 2 ** (training_set.resolution_log2 - int(np.floor(s.lod)))
+    s.resolution = 2 ** (training_set.resolution_log2 - int(np.floor(s.lod))) #$$ 2**(9-6) = 8
 
     # Minibatch size.
+    # desc += '-1gpu'; submit_config.num_gpus = 1; sched.minibatch_base = 4;
+    # sched.minibatch_dict = {4: 128, 8: 128, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8, 512: 4}
     s.minibatch = minibatch_dict.get(s.resolution, minibatch_base)
     s.minibatch -= s.minibatch % num_gpus
     if s.resolution in max_minibatch_per_gpu:
         s.minibatch = min(s.minibatch, max_minibatch_per_gpu[s.resolution] * num_gpus)
 
     # Learning rate.
+    #sched.G_lrate_dict = {128: 0.0015, 256: 0.002, 512: 0.003, 1024: 0.003}
+    #sched.D_lrate_dict = EasyDict(sched.G_lrate_dict)
     s.G_lrate = G_lrate_dict.get(s.resolution, G_lrate_base)
     s.D_lrate = D_lrate_dict.get(s.resolution, D_lrate_base)
     if lrate_rampup_kimg > 0:
@@ -239,6 +243,7 @@ def training_loop(
 
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * 1000)
+        # tick_kimg_dict          = {4: 160, 8:140, 16:120, 32:100, 64:80, 128:60, 256:40, 512:30, 1024:20}
         # sched.tick_kimg = s.tick_kimg = tick_kimg_dict.get(s.resolution, tick_kimg_base) #$$
         if cur_nimg >= tick_start_nimg + sched.tick_kimg * 1000 or done:
             cur_tick += 1
