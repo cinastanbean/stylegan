@@ -14,7 +14,7 @@
 
 ![](md-images/v5-zalando-skirt-hq-b-fakes007740.png)
 
-![](md-images/Xnip2019-05-22_18-55-29.png)
+![](md-images/Xnip2019-05-22_18-55-28.png)
 
 
 示例视频：
@@ -22,9 +22,6 @@
 [![Watch the video](md-images/v5-zalando-skirt-hq-b-fakes007740-video-snapshot.png)](https://v.youku.com/v_show/id_XNDIzNzI4MTgxMg==.html?spm=a2h3j.8428770.3416059.1)
 
 
-
-
-[![Watch the video](https://img.youtube.com/vi/T-D1KVIuvjA/maxresdefault.jpg)](https://youtu.be/T-D1KVIuvjA)
 
 #  1.2 服饰生成
 
