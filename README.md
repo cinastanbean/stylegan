@@ -1,5 +1,7 @@
 # StyleGAN - Generate Fashion Images 
 
+日志：2019年05月份实验过程和结果备忘。
+
 目的：服饰生成、模特生成。
 
 ## 0. Verbose
